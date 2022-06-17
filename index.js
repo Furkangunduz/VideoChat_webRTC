@@ -3,6 +3,10 @@ let APP_ID = "f045b940d86743a5909f347100f5f577"
 let token = "8432b70826fb421f8a8a57eefb7a28d4"
 let uid = String(Math.floor(Math.random() * 1000))
 
+let cameraBtn = document.getElementById("camera-btn")
+let micBtn = document.getElementById("mic-btn")
+
+
 let client
 let channel
 
@@ -19,6 +23,15 @@ if (!roomId)
 
 document.getElementById('user-1').volume = 0
 
+let constraits = {
+    video: {
+        width: 900,
+        height: 500,
+    },
+    audio: true
+}
+
+
 const servers = {
     iceServers: [
         {
@@ -29,7 +42,7 @@ const servers = {
 }
 
 let init = async () => {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    localStream = await navigator.mediaDevices.getUserMedia(constraits)
     document.getElementById("user-1").srcObject = localStream;
 
     client = await AgoraRTM.createInstance(APP_ID)
@@ -46,6 +59,7 @@ let init = async () => {
 }
 let handleUserLeft = () => {
     document.getElementById("user-2").style.display = "none"
+    document.getElementById("user-1").classList.remove("small-frame")
 }
 
 let handleUserJoined = async (memberId) => {
@@ -75,6 +89,9 @@ let createPeerConnection = async (peerConnection, memberId) => {
 
     document.getElementById("user-2").srcObject = remoteStream
     document.getElementById("user-2").style.display = "block"
+
+    document.getElementById("user-1").classList.add("small-frame")
+
 
     if (!localStream) {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
@@ -141,6 +158,30 @@ let leaveChannel = async () => {
     await client.logout()
 }
 
-window.addEventListener("beforeunload", () => leaveChannel())
+let toggleCamera = () => {
+    let videoTrack = localStream.getTracks().find((track) => track.kind == "video")
+    if (videoTrack.enabled) {
+        videoTrack.enabled = false;
+        cameraBtn.style.backgroundColor = "rgba(255,80,80)"
+    } else {
+        videoTrack.enabled = true;
+        cameraBtn.style.backgroundColor = "rgba(179,102,249)"
+    }
+}
 
+let toggleMic = () => {
+    let audioTrack = localStream.getTracks().find((track) => track.kind == "audio")
+    if (audioTrack.enabled) {
+        audioTrack.enabled = false;
+        micBtn.style.backgroundColor = "rgba(255,80,80)"
+    } else {
+        audioTrack.enabled = true;
+        micBtn.style.backgroundColor = "rgba(179,102,249,.9)"
+    }
+}
+
+window.addEventListener("beforeunload", () => leaveChannel())
+cameraBtn.addEventListener("click", toggleCamera)
+
+micBtn.addEventListener("click", toggleMic)
 init()
